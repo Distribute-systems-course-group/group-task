@@ -24,22 +24,9 @@ class myThread (threading.Thread):
             TCP(self.worldstate, self.ClientID,self.playerstate)
         else:
             threadLock.acquire()
-            #print("starting UDP")
             UDP(self.playerstate,self.worldstate)
             threadLock.release()
         print("Exiting " + self.name)
-
-# def on_press(key):
-#     try: k = key.char # single-char keys
-#     except: k = key.name # other keys
-#     if key == keyboard.Key.esc: return False # stop listener
-#     if k in ['up', 'down', 'left', 'right']: # keys interested
-#         # self.keys.append(k) # store it in global-like variable
-#         print('Key pressed: ' + k)
-#         #return False # remove this if want more keys
-#         return k
-
-
 
 
 def TCP(worldstate,ClientID,playerstate):
@@ -127,9 +114,6 @@ def TCP(worldstate,ClientID,playerstate):
                 break
             worldstate = data[3]
             print("The current worldstate :{}".format(worldstate))
-            #print(worldstate[0])
-            #print("!!!!{}".format(playerstate))
-            #print("The player at:{}".format(worldstate["1"]) )
             threadLock.release()
             time.sleep(2)
     print("You got away! Finished game!")    
@@ -144,10 +128,6 @@ def UDP(playerstate,worldstate):
     while True:  
         if playerstate["x"] == "STOP":
             break
-        #print("playerstate is {}".format(playerstate))
-        #print("WORLDSTATE :{}".format(worldstate))
-        #print(worldstate[playerstate["ClientID"]])
-        #print(worldstate[playerstate["ClientID"]][4])
         #print("Player at:" + str(worldstate[playerstate["ClientID"]][3]) +"." + str(worldstate[playerstate["ClientID"]][4]) )
         if keyboard.is_pressed('up'):
             print("pressed up")
@@ -207,10 +187,7 @@ def main():
     for t in threads:
         t.join()
     print("Goodbye.")   
-    #TCPThread = threading.Thread(target = TCP(worldstate,ClientID))
-    #TCPThread.start()
-    #UDPThread = threading.Thread(target = UDP, args= (playerstate,))
-    #UDPThread.start()
+
     
 
 
