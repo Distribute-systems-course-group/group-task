@@ -8,6 +8,8 @@ HEADERSIZE = 10
 BUFFER_SIZE = 1024
 threadLock = threading.RLock()
 
+#We make 2 threads for the palyer. One TCP and UDP. 
+#UDP sends user movement data, TCP creates thee connection
 class myThread (threading.Thread):
     def __init__(self, threadID, name,playerstate,worldstate):
         threading.Thread.__init__(self)
@@ -19,16 +21,18 @@ class myThread (threading.Thread):
 
     def run(self):
         print("Starting " + self.name)
+        #The TCP thread gets the lock first to get access to resources
         if self.name == "TCPThread":
             threadLock.acquire()
             TCP(self.worldstate, self.ClientID,self.playerstate)
         else:
+            #When the TCP releases the lock when the game will start, the UDP thread commences.
             threadLock.acquire()
             UDP(self.playerstate,self.worldstate)
             threadLock.release()
         print("Exiting " + self.name)
 
-
+#The TCP thread starts first, connecting to the server
 def TCP(worldstate,ClientID,playerstate):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     TCP_IP = socket.gethostname()
@@ -37,16 +41,22 @@ def TCP(worldstate,ClientID,playerstate):
     mustend = time.time() + 120
     gamedata = False
     msg =""
+    
+    #Trying to connect to server
     try:
         s.connect((TCP_IP, TCP_PORT))
     except:
         print("connection failed")
         sys.exit()
-
+    #The header includes also the length of the message, it is unneeded but removing it means changes to all array indexes
+    #We separate headers with _ character
     HEADER= str(ClientID) +"_"+str(1)+"_"+str(len(msg)) +"_"
     MESSAGE = HEADER + msg
+    
+    #And we send the first message to start queuing
     s.send(bytes(MESSAGE,"utf-8"))
-
+    
+    #We wait until we get a reply from the server that we are in queue
     while tryagain == True:
         try:
             data = s.recv(BUFFER_SIZE)
@@ -57,7 +67,8 @@ def TCP(worldstate,ClientID,playerstate):
             print("Server did not answer your request.")
             tryagain = int(input("Do you want to try again? True for yes False for no."))
     print("Waiting for a game...")
-
+    
+    #Here we queue for 2 min(=mustend time) for a game. If not game in that time, then we quit
     while True:
         while time.time() < mustend:
             try:
@@ -75,6 +86,7 @@ def TCP(worldstate,ClientID,playerstate):
                 s.close()
                 sys.exit()
         else:
+            #We have a game. The server has sent the Instance ID and worldstate
             data = data.split("_")
             print(type(data[3]))
             instanceID= data[0] 
@@ -86,10 +98,9 @@ def TCP(worldstate,ClientID,playerstate):
     threadLock.release()
     time.sleep(0.3)
 
+    #We begin game
     while True:
-        #print("trying to get something")
         threadLock.acquire()
-        #print("acquired worked!")
         try:
             data = s.recv(BUFFER_SIZE)
             data = data.decode("utf-8")
@@ -104,27 +115,32 @@ def TCP(worldstate,ClientID,playerstate):
                 print("Quitting game")
                 s.close()
                 sys.exit()
+        #We have worldstate coming from server.
         else:
             data = data.split("_")
-            #print("GOT SOMETHING:  {}".format(data))
             if data[3] == "YOU ARE SAFE!!":
                 playerstate["x"] = "STOP"
                 threadLock.release()
                 time.sleep(2)
                 break
+           #We update the local worldstate, with the one we got from the server
             worldstate = data[3]
             print("The current worldstate :{}".format(worldstate))
             threadLock.release()
             time.sleep(2)
     print("You got away! Finished game!")    
 
+#UDP send user arrow input data to the server. UDP starts running when TCP releases the lock after the game starts.
 def UDP(playerstate,worldstate):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     UDP_IP = socket.gethostname()
     UDP_PORT = 5005
+    
     #Let's check for player movement
     print("We are starting in Game {}".format(playerstate["InstanceID"]))
     print("READY,SET,GO!")
+    #We loop here to catch player input. Playerstate is the players local understanding of positioning.
+    #This should be fixed,so that when we get the worldtstate from the server we take our positioning from there.
     while True:  
         if playerstate["x"] == "STOP":
             break
@@ -143,7 +159,7 @@ def UDP(playerstate,worldstate):
             playerstate["x"] = playerstate["x"]-1
         if keyboard.is_pressed('esc'):
             break
-        
+        #After a button push, we send our local state, with client ID,instance and timestamp to the server.
         playerstate["timestamp"] = time.time()
         msg = str(playerstate["ClientID"])+"_"+ str(playerstate["InstanceID"])+"_"+ str(playerstate["timestamp"])+"_"+str(playerstate["x"])+"_"+ str(playerstate["y"])
         s.sendto(bytes(msg,"utf-8"),(UDP_IP, UDP_PORT))
