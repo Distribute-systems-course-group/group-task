@@ -8,6 +8,7 @@ HEADERSIZE = 10
 BUFFER_SIZE = 1024
 threadLock = threading.RLock()
 
+
 #We make 2 threads for the palyer. One TCP and UDP. 
 #UDP sends user movement data, TCP creates thee connection
 class myThread (threading.Thread):
