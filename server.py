@@ -1,7 +1,7 @@
 import socket
 import sys
 import threading
-import socketserver
+#import socketserver
 from datetime import datetime
 import time
 
@@ -12,7 +12,7 @@ threadLock = threading.RLock()
 
 #Creating UDP thread and TCP thread. UDP for player movement, TCP for bigger connections
 class myThread (threading.Thread):
-    def __init__(self, threadID, name,clientdict,instanceID,gameQueue,worldstate):
+    def __init__(self, threadID, name,clientdict,instanceID,gameQueue,worldstate,treasure):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
@@ -21,6 +21,8 @@ class myThread (threading.Thread):
         self.gameQueue = gameQueue
         self.worldstate = worldstate
         self.STOP =0
+        self.treasure = treasure.split(".")
+
     def run(self):
         print("Starting " + self.name)
         if self.name == "TCPThread":
@@ -28,11 +30,11 @@ class myThread (threading.Thread):
             TCP(self.clientdict, self.instanceID,self.gameQueue, self.worldstate,self.STOP)
         else:
             threadLock.acquire()
-            UDP(self.worldstate, self.STOP)
+            UDP(self.worldstate, self.STOP,self.treasure)
         print("Closing "+self.name)
 
 
-def UDP(worldstate, STOP):
+def UDP(worldstate, STOP,treasure):
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((socket.gethostname(), 5005))
@@ -59,7 +61,7 @@ def UDP(worldstate, STOP):
 
         for c in worldstate:
             #If palyer reached the SAFE coordinate, then mark him as safe.
-            if worldstate[c]!="SAFE" and worldstate[c][3] >= '5' and worldstate[c][4] >= '5':
+            if worldstate[c]!="SAFE" and worldstate[c][3] == treasure[0] and worldstate[c][4] == treasure[1]:
                worldstate[c] = "SAFE"
 
         threadLock.release()
@@ -77,7 +79,7 @@ def TCP(clientdict, instanceID,gameQueue,worldstate,STOP):
 
     while True:
         clientsocket, address = s.accept()
-        print(f'Connection from {address} has been established.')
+        print("Connection from {} has been established.".format(address))
         clientmsg = clientsocket.recv(1024)
         clientmsg = clientmsg.decode("utf-8")
         clientmsg = clientmsg.split("_")
@@ -184,11 +186,11 @@ def main():
     instanceID = 1
     gameQueue = {}
     worldstate = {}
-    
+    treasure = str(input("In what coordinate will we hide the treasure? Write the coordinate in form x.y (example: 2.3)"))
     threads =[]
-    TCPThread = myThread(1,"TCPThread",clientdict,instanceID,gameQueue,worldstate)
+    TCPThread = myThread(1,"TCPThread",clientdict,instanceID,gameQueue,worldstate,treasure)
     TCPThread.start()
-    UDPThread = myThread(2,"UDPThread",clientdict,instanceID,gameQueue,worldstate)
+    UDPThread = myThread(2,"UDPThread",clientdict,instanceID,gameQueue,worldstate,treasure)
     UDPThread.start()
     threads.append(TCPThread)
     threads.append(UDPThread)
