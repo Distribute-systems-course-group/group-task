@@ -77,7 +77,6 @@ def TCP(worldstate,ClientID,playerstate):
                 gamedata = True
                 break
             except:
-                print(mustend-time.time())
                 time.sleep(1)    
         if gamedata == False:
             wait = int(input("No game was found. press 1 to continue waiting or 0 to stop."))
@@ -88,10 +87,8 @@ def TCP(worldstate,ClientID,playerstate):
         else:
             #We have a game. The server has sent the Instance ID and worldstate
             data = data.split("_")
-            print(type(data[3]))
             instanceID= data[0] 
             worldstate = json.loads(data[3])
-            print(type(worldstate))
             playerstate["InstanceID"] = data[0]
             break
     print("Joined game: {}".format(data))
@@ -108,33 +105,39 @@ def TCP(worldstate,ClientID,playerstate):
             
         except:
             print("No data was recieved" + str(mustend-time.time()))
-            time.sleep(0.1)    
-        if gamedata == False:
-            wait = int(input("No game was found. press 1 to continue waiting or 0 to stop."))
-            if wait != 1:
-                print("Quitting game")
-                s.close()
-                sys.exit()
+            threadLock.release()
+            time.sleep(0.1)
+            continue
+           # break    
+        #if gamedata == False:
+        #    wait = int(input("No game was found. press 1 to continue waiting or 0 to stop."))
+        #    if wait != 1:
+        #        print("Quitting game")
+        #        s.close()
+        #        sys.exit()
         #We have worldstate coming from server.
-        else:
+        if gamedata == True:
             data = data.split("_")
-            if data[3] == "YOU ARE SAFE!!":
+
+            if len(data) == 1 or "GAME OVER" in data[3]:
                 playerstate["x"] = "STOP"
                 threadLock.release()
                 time.sleep(2)
                 break
            #We update the local worldstate, with the one we got from the server
-            worldstate = data[3]
+           # worldstate = data[3]
             print("The current worldstate :{}".format(worldstate))
             threadLock.release()
             time.sleep(2)
-    print("You got away! Finished game!")    
+    print("Finished game!")    
 
 #UDP send user arrow input data to the server. UDP starts running when TCP releases the lock after the game starts.
 def UDP(playerstate,worldstate):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     UDP_IP = socket.gethostname()
-    UDP_PORT = 5005
+    UDP_PORT = int(input("Give me a port number."))
+   # UDP_PORT = 54321
+    #s.bind((UDP_IP, UDP_PORT))
     
     #Let's check for player movement
     print("We are starting in Game {}".format(playerstate["InstanceID"]))
@@ -163,6 +166,9 @@ def UDP(playerstate,worldstate):
         playerstate["timestamp"] = time.time()
         msg = str(playerstate["ClientID"])+"_"+ str(playerstate["InstanceID"])+"_"+ str(playerstate["timestamp"])+"_"+str(playerstate["x"])+"_"+ str(playerstate["y"])
         s.sendto(bytes(msg,"utf-8"),(UDP_IP, UDP_PORT))
+        data, addr = s.recvfrom(1024) # buffer size is 1024 bytes
+        data = data.decode("utf-8")
+        print ("received message:{}".format(data))
         threadLock.release()
         time.sleep(0.7)
         threadLock.acquire()

@@ -35,27 +35,33 @@ class myThread (threading.Thread):
 
 
 def UDP(worldstate, STOP,treasure):
-
+    addresslist=[]
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((socket.gethostname(), 5005))
     #Let's pick up player sent movement data
     while True:
         if STOP == 1:
+            print("STOP is one!!!!!!")
             sys.exit()
             break
         try:
             data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
+            addresslist.append(addr)
+            print("Address is :{}".format(addr))
         except:
             break
         data = data.decode("utf-8")
         clientmsg = data.split("_")
         clientID = str(clientmsg[0])
-        if "stop" in worldstate:
-            break
+        #if "stop" in worldstate:
+        #    break
         if clientID in worldstate:
             #If palyer isn't safe yet, update data to worldstate
             if worldstate[clientID] !="SAFE":
                 worldstate[clientID] = clientmsg
+                #print("worldstate at " + clientID +" is {}".format(worldstate[clientID]))
+            else:
+                break
         else:
             worldstate[clientID] = clientmsg
 
@@ -63,11 +69,13 @@ def UDP(worldstate, STOP,treasure):
             #If palyer reached the SAFE coordinate, then mark him as safe.
             if worldstate[c]!="SAFE" and worldstate[c][3] == treasure[0] and worldstate[c][4] == treasure[1]:
                worldstate[c] = "SAFE"
+        for address in addresslist:
+            pritn("HERE!")
+            sock.sendto(bytes("Moi","utf-8"),address)
 
         threadLock.release()
         time.sleep(0.5)
         threadLock.acquire()
-    print("closing UDP")
 
 def TCP(clientdict, instanceID,gameQueue,worldstate,STOP):
     MAXPLAYERS =2
@@ -120,19 +128,12 @@ def TCP(clientdict, instanceID,gameQueue,worldstate,STOP):
         threadLock.release()
         print("START GAME")
         break
-    sent =[]
-    remove =[]
+
     #The real game starts here. Each while loop we look where players are and if someone is SAFE.
+    endgame =False
     while True:
         threadLock.acquire()
-        if len(gameQueue) == 0:
-            STOP = 1
-            print("Everyone has completed the game!")
-            worldstate.clear()
-            worldstate["stop"] =1
-            s.close()
-            sys.exit()
-            break
+
 
             #Gamequeue has the list of players still not safe and playing.
         for c in gameQueue.keys():
@@ -141,42 +142,39 @@ def TCP(clientdict, instanceID,gameQueue,worldstate,STOP):
             #If the player is finally safe, send them a packet so they know 
             #and remove them form the Gamequeue
 
-            if c in worldstate and worldstate[c] == "SAFE" and c not in sent:
-                remove.append(c)
-                sent.append(c)
-                print(" Player: "+ c + " IS SAFE")
+            if c in worldstate and worldstate[c] == "SAFE":
+                print(" Player: "+ c + " IS SAFE and found the treasure")
                 HEADER = str(instanceID) + "_" + c + "_" + str(len(worldstate))
-                msg = "YOU ARE SAFE!!"
+                msg = "GAME OVER! Player {} won the game!".format(c)
                 msg = HEADER + "_" + msg
-                try:
+                #try:
+                for c in gameQueue.keys():
+                    clientsocket = gameQueue[c][2]
                     clientsocket.send(bytes(msg.encode("utf-8")))
-                except:
-                    pass
+                    #print("Sent ending message to {}".format(clientsocket))
+                #s.close()
+                endgame=True
+                break
+                #except:
+                #    print("Game ending error")
+                #    s.close()
+                #    break
                     
-            if c in worldstate and worldstate[c] != "SAFE":
+            else:
                 HEADER = str(instanceID) + "_" + c + "_" + str(len(worldstate))
                 msg = HEADER + "_" + str(worldstate)
-                
-                clientsocket.send(bytes(msg.encode("utf-8")))
-            if c in gameQueue.keys() and c not in remove:
-                for c in worldstate.keys(): 
+                #clientsocket.send(bytes(msg.encode("utf-8")))
+                for c in worldstate:
                     if worldstate[c] != "SAFE":
                         print("Game " + worldstate[c][1] + " Player: " + c + " at " + worldstate[c][3]+"."+worldstate[c][4])
-        for r in remove:
-            if r in gameQueue:
-                gameQueue.pop(r)
-        if len(gameQueue) == 0:
+                        print("worldstate is: {}".format(worldstate))
+                    else:
+                        print(" Player: " + c + " is finnished")
+        threadLock.release()
+        time.sleep(1)
+        if endgame == True:
             STOP = 1
-            print("Everyone has completed the game!")
-            worldstate.clear()
-            worldstate["stop"] =1
-            threadLock.release()
-            s.close()
-            sys.exit()
-            
-        else:
-            threadLock.release()
-            time.sleep(1.5)        
+            break        
 
 
 
