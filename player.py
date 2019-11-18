@@ -3,7 +3,9 @@ import sys
 import threading
 import time  
 import keyboard
+import json
 import pickle 
+HEADERSIZE = 10
 BUFFER_SIZE = 1024
 threadLock = threading.RLock()
 
@@ -147,23 +149,21 @@ def UDP(playerstate,worldstate):
         if "GAME OVER" in worldstate:
             break
 
-        if str(playerstate["ClientID"]) in worldstate:
-            playerstate["x"] = int(worldstate[str(playerstate["ClientID"])][3])
-            playerstate["y"] = int(worldstate[str(playerstate["ClientID"])][4])
+        if len(worldstate) !=0:
+            print("Player moved to: "+ worldstate[str(playerstate["ClientID"])][3] + "." + worldstate[str(playerstate["ClientID"])][4])
 
-        print("Player moved to: "+ str(playerstate["x"]) + "." + str(playerstate["y"]) )
         if keyboard.is_pressed('up'):
             print("pressed up")
-            playerstate["y"] = playerstate["y"]+1 
+            playerstate["y"] = 1 
         if keyboard.is_pressed("down"):
             print("pressed down")
-            playerstate["y"] = playerstate["y"]-1
+            playerstate["y"] = -1
         if keyboard.is_pressed('right'):
             print("pressed right")
-            playerstate["x"] = playerstate["x"]+1 
+            playerstate["x"] = +1 
         if keyboard.is_pressed('left'):
             print("pressed left")
-            playerstate["x"] = playerstate["x"]-1
+            playerstate["x"] = -1
         if keyboard.is_pressed('esc'):
             break
         #After a button push, we send our local state, with client ID,instance and timestamp to the server.
@@ -175,7 +175,12 @@ def UDP(playerstate,worldstate):
         time.sleep(1.5)
         threadLock.acquire()
 
-        
+
+
+
+
+
+
 def main():
 
     worldstate = {}
@@ -208,6 +213,10 @@ def main():
         t.join()
     print("Goodbye.")   
 
-    
+     
 
 
+if __name__ == "__main__":
+    main()
+
+sys.exit()
