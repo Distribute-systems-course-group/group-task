@@ -2,9 +2,10 @@
 
 ## The purpose and core functionality of the project
 
-Our project is a multiplayer treasure hunt game that consist of the controlling server and requires two player clients. The server will be given a x.y coordinates where the treasure will be hidden. The game instance begins when we have 2 players online queuing for a game. All players start at coordinates 0.0 (x=0. y=0). By pressing arrow buttons the players move and the player wins the game when it reaches the treasure coordinates that was set on the server.
+Our project is a multi-player treasure hunt game that consist of the controlling server and requires two player clients. The server will get x and y coordinates where the treasure will be hidden. The game instance begins when we have 2 players online queuing for a game. All players start at coordinates 0.0 (x=0. y=0). By pressing arrow buttons the players move and the player who reaches the given treasure coordinates first will win the game.
 
 ## System design (using the 3 principles from the lectures; architecture, processes, communication)
+
 Both the player and server make an UDP thread and a TCP thread for communication. UDP is used to send player action data and TCP for handling connections. For the better server performance the worldstate is updated using UDP.
 
 ## Problems encountered, lessons learned
