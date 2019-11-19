@@ -4,6 +4,7 @@ import threading
 import time  
 import keyboard
 import json
+import pickle 
 HEADERSIZE = 10
 BUFFER_SIZE = 1024
 threadLock = threading.RLock()
@@ -87,8 +88,7 @@ def TCP(worldstate,ClientID,playerstate):
         else:
             #We have a game. The server has sent the Instance ID and worldstate
             data = data.split("_")
-            instanceID= data[0] 
-            worldstate = json.loads(data[3])
+            instanceID= data[0]
             playerstate["InstanceID"] = data[0]
             break
     print("Joined game: {}".format(data))
@@ -99,8 +99,8 @@ def TCP(worldstate,ClientID,playerstate):
     while True:
         threadLock.acquire()
         try:
-            data = s.recv(BUFFER_SIZE)
-            data = data.decode("utf-8")
+            msg = s.recv(BUFFER_SIZE)
+           # data = data.decode("utf-8")
             gamedata = True
             
         except:
@@ -108,36 +108,34 @@ def TCP(worldstate,ClientID,playerstate):
             threadLock.release()
             time.sleep(0.1)
             continue
-           # break    
-        #if gamedata == False:
-        #    wait = int(input("No game was found. press 1 to continue waiting or 0 to stop."))
-        #    if wait != 1:
-        #        print("Quitting game")
-        #        s.close()
-        #        sys.exit()
+            #break    
+        if gamedata == False:
+           wait = int(input("No game was found. press 1 to continue waiting or 0 to stop."))
+           if wait != 1:
+               print("Quitting game")
+               s.close()
+               sys.exit()
         #We have worldstate coming from server.
-        if gamedata == True:
-            data = data.split("_")
-
-            if len(data) == 1 or "GAME OVER" in data[3]:
-                playerstate["x"] = "STOP"
+        else:
+            try:
+                data = pickle.loads(msg)
+            except:
                 threadLock.release()
-                time.sleep(2)
                 break
-           #We update the local worldstate, with the one we got from the server
-           # worldstate = data[3]
+            for id in data:
+                worldstate[id] = data[id]
+            
+
             print("The current worldstate :{}".format(worldstate))
             threadLock.release()
-            time.sleep(2)
+            time.sleep(1.5)
     print("Finished game!")    
 
 #UDP send user arrow input data to the server. UDP starts running when TCP releases the lock after the game starts.
 def UDP(playerstate,worldstate):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     UDP_IP = socket.gethostname()
-    UDP_PORT = int(input("Give me a port number."))
-   # UDP_PORT = 54321
-    #s.bind((UDP_IP, UDP_PORT))
+    UDP_PORT = 5005
     
     #Let's check for player movement
     print("We are starting in Game {}".format(playerstate["InstanceID"]))
@@ -145,33 +143,38 @@ def UDP(playerstate,worldstate):
     #We loop here to catch player input. Playerstate is the players local understanding of positioning.
     #This should be fixed,so that when we get the worldtstate from the server we take our positioning from there.
     while True:  
+        #print(worldstate)
         if playerstate["x"] == "STOP":
             break
-        #print("Player at:" + str(worldstate[playerstate["ClientID"]][3]) +"." + str(worldstate[playerstate["ClientID"]][4]) )
+        if "GAME OVER" in worldstate:
+            break
+
+        if len(worldstate) !=0:
+            print("Player moved to: "+ worldstate[str(playerstate["ClientID"])][3] + "." + worldstate[str(playerstate["ClientID"])][4])
+
         if keyboard.is_pressed('up'):
             print("pressed up")
-            playerstate["y"] = playerstate["y"]+1 
+            playerstate["y"] = 1 
         if keyboard.is_pressed("down"):
             print("pressed down")
-            playerstate["y"] = playerstate["y"]-1
+            playerstate["y"] = -1
         if keyboard.is_pressed('right'):
             print("pressed right")
-            playerstate["x"] = playerstate["x"]+1 
+            playerstate["x"] = +1 
         if keyboard.is_pressed('left'):
             print("pressed left")
-            playerstate["x"] = playerstate["x"]-1
+            playerstate["x"] = -1
         if keyboard.is_pressed('esc'):
             break
         #After a button push, we send our local state, with client ID,instance and timestamp to the server.
         playerstate["timestamp"] = time.time()
         msg = str(playerstate["ClientID"])+"_"+ str(playerstate["InstanceID"])+"_"+ str(playerstate["timestamp"])+"_"+str(playerstate["x"])+"_"+ str(playerstate["y"])
+        #print("Send to server playerstate : {}".format(playerstate))
         s.sendto(bytes(msg,"utf-8"),(UDP_IP, UDP_PORT))
-        data, addr = s.recvfrom(1024) # buffer size is 1024 bytes
-        data = data.decode("utf-8")
-        print ("received message:{}".format(data))
         threadLock.release()
-        time.sleep(0.7)
+        time.sleep(1.5)
         threadLock.acquire()
+
 
 
 
@@ -210,12 +213,7 @@ def main():
         t.join()
     print("Goodbye.")   
 
-    
-
-
-            
-
-    
+     
 
 
 if __name__ == "__main__":
