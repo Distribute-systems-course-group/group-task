@@ -30,19 +30,3 @@ Both the player and server make an UDP thread for handling player action data an
 ### Choose a unique payload, e.g., average size, and then measure the inter arrival rate between messages?
 
 ### How reliable is your architecture? What kind of applications can benefit from this architectural flavor?
-
-
-Player:
-#The TCP thread gets the lock first to get access to resources
-#When the TCP releases the lock when the game will start, the UDP thread commences.
-#The TCP thread starts first, connecting to the server
-#we send the first message to start queuing
-#We wait until we get a reply from the server that we are in queue
-#Here we queue for 2 min(=mustend time) for a game. If not game in that time, then we quit
-#If there is a game, the server has sent the Instance ID and worldstate to client.
-#When game begins, client has worldstate coming from server.
-#UDP send user arrow input data to the server. UDP starts running when TCP releases the lock after the game starts.
-#Let's check for player movement
-#We loop here to catch player input. Playerstate is the players local understanding of positioning.
-#This should be fixed,so that when we get the worldtstate from the server we take our positioning from there.
-#After a button push, we send our local state, with client ID,instance and timestamp to the server.
