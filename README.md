@@ -6,7 +6,7 @@ Our project is a multi-player treasure hunt game that consist of the controlling
 
 ## System design (using the 3 principles from the lectures; architecture, processes, communication)
 
-Both the player and server make an UDP thread for handling player action data and a TCP thread for communication between connections. The player client sends with the worldstate what arrow buttons have been pressed and the game management server makes the decicion where the user will be moved based on that information. The players get the information about their locations by reading their own indexes from the worldstate coming from the server. For the better server performance the worldstate is updated using UDP and sent through TCP.
+Our system architecture consists of three nodes; one server (server.py) and two clients. The clients have unique Client ID:s and they are put up by running the same source file (client.py). In our implementation all the communication between the three nodes is happening through the server, meaning that the both clients are communicating with each other indirectly through the server and the server is communicating directly with all clients. Both the player and server make an UDP thread for handling player action data and a TCP thread for communication between connections. The player client sends with the worldstate what arrow buttons have been pressed and the game management server makes the decicion where the user will be moved based on that information. The players get the information about their locations by reading their own indexes from the worldstate coming from the server. For the better server performance the worldstate is updated using UDP and sent through TCP.
 
 ![alt test](/system%20discription.PNG)
 
@@ -22,10 +22,13 @@ Our team had some management issues since one member left the group and thus we 
 4. From your own computer terminal, go to the project root file and run `python server.py` If running correctly, server asks you to give x.y coordinates for hiding the treasure. Feed the coordinates and then the server should be up and running.
 5. From the other end point terminal, go to the project root file and run `python client.py` If running correctly, client asks you to give a client id for the player. Feed the client id and then the client should be waiting for a game. Now server should declare that the connection has been established and the client has been added to the list.
 6. Connect a second player from the third end point to the game. Now the server should start the game. Players will get notified that the game has started.
+7. As a player press the arrow keys in order to change your current coordinate.
 
 ## Questions and answers
 
 ### What is the average time for sending 50 messages between two nodes (random payload)?
+
+Client node prints epoch timestamp when sending the location on loop starts. Server node prints epoch timestamp after receiving 50 messages. The average time for this process was around 74 seconds.
 
 ### Choose 3 different fixed message sizes (payloads for min, average, max), what is the average time when sending 25 in each case?
 
