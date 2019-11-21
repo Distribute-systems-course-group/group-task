@@ -43,7 +43,7 @@ Maybe the payloads where too close to eachother since the time difference is non
 
 ### Choose a unique payload, e.g., average size, and then measure the inter arrival rate between messages?
 
--
+This test wasn't managed to finish.
 
 ### How reliable is your architecture? What kind of applications can benefit from this architectural flavor?
 
