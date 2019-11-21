@@ -34,6 +34,7 @@ class myThread (threading.Thread):
             UDP(self.worldstate, self.STOP,self.treasure)
         print("Closing "+self.name)
 
+#In UDP thread server recieves user movement data from the player during the game.
 
 def UDP(worldstate, STOP,treasure):
     addresslist=[]
@@ -41,6 +42,7 @@ def UDP(worldstate, STOP,treasure):
     sock.bind((socket.gethostname(), 5005))
     #Let's pick up player sent movement data
     while True:
+        #If the game is over, no need to listen anymore and we end the UDP thread.
         if "GAME OVER" in worldstate:
             break
         try:
@@ -49,23 +51,20 @@ def UDP(worldstate, STOP,treasure):
             break
         data = data.decode("utf-8")
         clientmsg = data.split("_")
-        print("Clientmsg is: {}".format(clientmsg))
+        print("Clientmsg from player {} is: {}".format(clientmsg[0],clientmsg))
         clientID = str(clientmsg[0])
 
         if clientID in worldstate:
-            #If palyer isn't safe yet, update data to worldstate
+            #If palyer isn't safe yet, so hasn't found the treasure update data to worldstate.
+            #Check what button was pushed and update coordinates accordingly.
             if worldstate[clientID] !="SAFE":
                 if clientmsg[3] == "1":
-                    print("up")
                     worldstate[clientID][3] = str(int(worldstate[clientID][3])+1)
                 if clientmsg[3] == "-1":
-                    print("down")
                     worldstate[clientID][3] = str(int(worldstate[clientID][3])-1)
                 if clientmsg[4] == "1":
-                    print("right")
                     worldstate[clientID][4] = str(int(worldstate[clientID][4])+1)
                 if clientmsg[4] == "-1":
-                    print("left")
                     worldstate[clientID][3] = str(int(worldstate[clientID][3])-1)
                 worldstate[clientID][2] = clientmsg[2]
                 #print("worldstate at " + clientID +" is {}".format(worldstate[clientID]))
@@ -94,7 +93,7 @@ def TCP(clientdict, instanceID,gameQueue,worldstate,STOP):
     s.bind((socket.gethostname(), 12345))
     s.listen(100)
     print("Server up and running")
-
+   # We listen to connections untill we have enough players for a game.
     while True:
         clientsocket, address = s.accept()
         print("Connection from {} has been established.".format(address))
@@ -152,7 +151,7 @@ def TCP(clientdict, instanceID,gameQueue,worldstate,STOP):
             #that includes who won the game.
 
             if c in worldstate and worldstate[c] == "SAFE":
-                print(" Player: "+ c + " IS SAFE and found the treasure")
+                print(" Player: "+ c + " found the treasure!!")
                 worldstate["GAME OVER"] = "GAME OVER! Player {} won the game!".format(c)
                 msg = pickle.dumps(worldstate)
                 #try:
@@ -162,14 +161,15 @@ def TCP(clientdict, instanceID,gameQueue,worldstate,STOP):
                 endgame=True
             #If no one has found the treasure yet, send everyone the current worldstate   
             else:
+                print("Sending to all players worldstate: {}".format(worldstate))
                 msg = pickle.dumps(worldstate)
                 clientsocket.send(msg)
                 for c in worldstate:
-                    if worldstate[c] != "SAFE":
+                    if worldstate[c] != "SAFE" and "GAME OVER" not in worldstate:
                         print("Game " + worldstate[c][1] + " Player: " + c + " at " + worldstate[c][3]+"."+worldstate[c][4])
-                        #print("worldstate is: {}".format(worldstate))
-                    else:
-                        print(" Player: " + c + " is finnished")
+                        
+        if "GAME OVER" in worldstate:
+            print(worldstate["GAME OVER"])                   
         threadLock.release()
         time.sleep(1.5)
         if endgame == True:

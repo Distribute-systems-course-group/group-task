@@ -95,20 +95,18 @@ def TCP(worldstate,ClientID,playerstate):
     threadLock.release()
     time.sleep(0.3)
 
-    #We begin game
+    #We begin game by trying to aquire worldstate from the server.
     while True:
         threadLock.acquire()
         try:
             msg = s.recv(BUFFER_SIZE)
-           # data = data.decode("utf-8")
             gamedata = True
             
         except:
             print("No data was recieved" + str(mustend-time.time()))
             threadLock.release()
             time.sleep(0.1)
-            continue
-            #break    
+            continue  
         if gamedata == False:
            wait = int(input("No game was found. press 1 to continue waiting or 0 to stop."))
            if wait != 1:
@@ -129,6 +127,8 @@ def TCP(worldstate,ClientID,playerstate):
             print("The current worldstate :{}".format(worldstate))
             threadLock.release()
             time.sleep(1.5)
+    if "GAME OVER" in worldstate:
+        print(worldstate["GAME OVER"])
     print("Finished game!")    
 
 #UDP send user arrow input data to the server. UDP starts running when TCP releases the lock after the game starts.
@@ -150,7 +150,7 @@ def UDP(playerstate,worldstate):
             break
 
         if len(worldstate) !=0:
-            print("Player moved to: "+ worldstate[str(playerstate["ClientID"])][3] + "." + worldstate[str(playerstate["ClientID"])][4])
+            print("Player is at: "+ worldstate[str(playerstate["ClientID"])][3] + "." + worldstate[str(playerstate["ClientID"])][4])
 
         if keyboard.is_pressed('up'):
             print("pressed up")
