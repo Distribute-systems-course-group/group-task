@@ -38,3 +38,7 @@ Client node prints epoch timestamp when sending the location on loop starts. Ser
 
 ### How reliable is your architecture? What kind of applications can benefit from this architectural flavor?
 
+The client-server model allows you to have a cost efficient centralized system with a possibility of a data recovery. Therefore it is suitable for applications that need to send data effectively and safely, like money transfer applications or webstores.
+
+The reliability of this model might be lower in real time multiplayer games. In our treasure hunt game the working and correct communication between the two player clients requires that both of the clients can maintain a working connection with the server. If there is an issue in the connection between the server and the first client, the second client can't reach the first client as well. We need to know all the player movements in order to continue the game, so one broken client connection can block the whole system. 
+
