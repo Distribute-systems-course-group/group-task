@@ -12,7 +12,7 @@ Both the player and server make an UDP thread for handling player action data an
 
 ## Problems encountered, lessons learned
 
-
+Our team had some management issues since one member left the group and thus we had less time and resourced to implement the project. We decided to keep it as simple as possible so that we can cover the most vital parts. We also had problems with installing Docker so we decided to just use Virtual Box for testing the distributed connections. 
 
 ## Instructions for installation and execution
 
