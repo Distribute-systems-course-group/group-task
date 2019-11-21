@@ -14,7 +14,7 @@ When the server is up and running, it uses TCP for waiting a connection request 
 
 ## Problems encountered, lessons learned
 
-Our team had some management issues since one member left the group and thus we had less time and resourced to implement the project. We decided to keep it as simple as possible so that we can cover the most vital parts. We also had problems with installing Docker so we decided to just use Virtual Box for testing the distributed connections. 
+Our team had some management issues since one member left the group and thus we had less time and resourced to implement the project. We decided to keep it as simple as possible so that we can cover the most vital parts. We also had problems with installing Docker so we decided to just use Virtual Box for testing the distributed connections. There was also some issues and very limited time to excecute the payload sending time measurements, so they were done by implementing mock code to client and server files and counting the timestamp difference.
 
 ## Instructions for installation and execution
 
@@ -34,7 +34,16 @@ Client node prints epoch timestamp when sending the location on loop starts. Ser
 
 ### Choose 3 different fixed message sizes (payloads for min, average, max), what is the average time when sending 25 in each case?
 
+min = 1 byte / 36.09 seconds
+avg = 50 bytes / 36.09 seconds
+max = 100 bytes / 36.1 seconds
+
+Maybe the payloads where too close to eachother since the time difference is nonexistent..
+
+
 ### Choose a unique payload, e.g., average size, and then measure the inter arrival rate between messages?
+
+-
 
 ### How reliable is your architecture? What kind of applications can benefit from this architectural flavor?
 
